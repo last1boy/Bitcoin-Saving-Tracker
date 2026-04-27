@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SatStack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+    .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; }
+    .card-hover { transition: border-color 0.2s, box-shadow 0.2s; }
+    .card-hover:hover { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b22; }
+    .accent { color: #f59e0b; }
+    .btn-primary { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; font-weight: 700; border-radius: 0.5rem; padding: 0.5rem 1.25rem; transition: opacity 0.2s, transform 0.1s; cursor: pointer; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; border: 1px solid #475569; color: #94a3b8; border-radius: 0.5rem; padding: 0.5rem 1.25rem; transition: all 0.2s; cursor: pointer; }
+    .btn-ghost:hover { border-color: #f59e0b; color: #f59e0b; }
+    .input-field { background-color: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.5rem; padding: 0.5rem 0.75rem; width: 100%; transition: border-color 0.2s; }
+    .input-field:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px #f59e0b22; }
+    .input-field::placeholder { color: #475569; }
+    select.input-field option { background: #1e293b; }
+    .toggle-btn { padding: 0.4rem 1rem; border-radius: 0.375rem; transition: all 0.15s; cursor: pointer; font-weight: 600; font-size: 0.875rem; }
+    .toggle-btn.active-buy { background: #14532d; color: #4ade80; border: 1px solid #16a34a; }
+    .toggle-btn.active-sell { background: #450a0a; color: #f87171; border: 1px solid #dc2626; }
+    .toggle-btn.inactive { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+    .toggle-btn.inactive:hover { border-color: #475569; color: #94a3b8; }
+    .tab-btn { padding: 0.4rem 1rem; border-bottom: 2px solid transparent; color: #64748b; font-size: 0.875rem; font-weight: 600; transition: all 0.15s; cursor: pointer; background: none; border-top: none; border-left: none; border-right: none; }
+    .tab-btn.active { color: #f59e0b; border-bottom-color: #f59e0b; }
+    .tab-btn:hover:not(.active) { color: #94a3b8; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-box { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 #4ade8066} 70%{box-shadow:0 0 0 6px #4ade8000} 100%{box-shadow:0 0 0 0 #4ade8000} }
+    .halving-bar { background: #1e293b; border-radius: 0.375rem; overflow: hidden; height: 6px; }
+    .halving-fill { background: linear-gradient(90deg, #f59e0b, #ea580c); height: 100%; transition: width 0.5s ease; border-radius: 0.375rem; }
+    .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pill-buy { background: #14532d; color: #4ade80; }
+    .pill-sell { background: #450a0a; color: #f87171; }
+    .pill-expense { background: #451a00; color: #fb923c; }
+    .pl-positive { color: #4ade80; }
+    .pl-negative { color: #f87171; }
+    .row-buy { background-color: #0d1f0d; }
+    .row-sell { background-color: #1f0d0d; }
+    .row-expense { background-color: #1a0f00; }
+    .row-buy:hover { background-color: #122012; }
+    .row-sell:hover { background-color: #221212; }
+    .row-expense:hover { background-color: #1f1300; }
+    .delete-btn { color: #475569; transition: color 0.15s; background: none; border: none; cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; }
+    .delete-btn:hover { color: #f87171; background: #1f0d0d; }
+    .btc-coin { width: 180px; height: 180px; border-radius: 50%; background: #0a1628; border: 5px solid #b45309; box-shadow: 0 0 0 2px #f59e0b55, 0 0 32px #f59e0b22, inset 0 0 24px #00000099; position: relative; overflow: hidden; }
+    .coin-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 40%, #d97706 75%, #92400e 100%); transition: height 1.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .coin-fill::after { content: ''; position: absolute; top: -10px; left: -60%; width: 220%; height: 20px; background: rgba(252,211,77,0.6); border-radius: 50%; animation: coinwave 2.4s ease-in-out infinite; }
+    @keyframes coinwave { 0%{transform:translateX(0) scaleY(1)} 50%{transform:translateX(15%) scaleY(1.3)} 100%{transform:translateX(0) scaleY(1)} }
+    .coin-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
+    .coin-symbol { font-size: 3.5rem; font-weight: 900; line-height: 1; color: rgba(255,255,255,0.92); text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
+    .coin-pct { font-size: 0.9rem; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 1px 6px rgba(0,0,0,0.9); }
+    .coin-glow { position: absolute; inset: -5px; border-radius: 50%; border: 5px solid transparent; transition: border-color 0.6s; }
+    .coin-glow.active { border-color: #f59e0b88; box-shadow: 0 0 16px #f59e0b66; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: #1e293b; border: 1px solid #334155; border-radius: 0.625rem; padding: 0.75rem 1.25rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; opacity: 0; transform: translateY(12px) scale(0.96); animation: toastIn 0.25s ease forwards; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .toast.out { animation: toastOut 0.2s ease forwards; }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    @keyframes toastIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastOut { to { opacity: 0; transform: translateY(8px) scale(0.96); } }
+    .empty-state { text-align: center; padding: 4rem 2rem; color: #475569; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fadeIn 0.25s ease; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #0f172a; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen scrollbar-thin">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+    <div class="flex items-center gap-2 mr-auto">
+      <span class="text-2xl font-black accent">₿</span>
+      <span class="font-bold text-slate-200 text-sm hidden sm:block">SatStack</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <div class="card px-3 py-1.5 flex items-center gap-2">
+        <span class="pulse-dot" id="price-dot" style="background:#f59e0b"></span>
+        <span class="text-slate-400">BTC/USD</span>
+        <span class="font-bold text-slate-100" id="price-usd">—</span>
+      </div>
+      <div class="card px-3 py-1.5 flex items-center gap-2">
+        <span class="text-slate-400">Block</span>
+        <span class="font-bold accent" id="block-height">—</span>
+      </div>
+      <div class="card px-3 py-1.5 flex flex-col gap-0.5 min-w-[140px]">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-slate-400">Halving in</span>
+          <span class="font-bold text-orange-400" id="halving-blocks">—</span>
+        </div>
+        <div class="halving-bar" style="width:130px"><div class="halving-fill" id="halving-fill" style="width:0%"></div></div>
+      </div>
+      <div class="text-slate-600 text-[10px] hidden md:block" id="last-updated">—</div>
+    </div>
+    <div class="flex items-center gap-2 ml-2">
+      <button onclick="openSettings()" class="btn-ghost text-sm p-2" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </button>
+      <button onclick="openAddModal()" class="btn-primary text-sm flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+        <span class="hidden sm:inline">Add Entry</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+  <!-- BTC SUMMARY CARDS -->
+  <section>
+    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Bitcoin Portfolio</p>
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3" id="btc-cards"></div>
+  </section>
+
+  <!-- EXPENSE SUMMARY CARDS -->
+  <section>
+    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Expenses</p>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="expense-cards"></div>
+  </section>
+
+  <!-- PROGRESS COIN -->
+  <section class="card p-6 fade-in">
+    <div class="flex items-center justify-between mb-5">
+      <span class="accent font-bold text-sm">₿ Goal Progress</span>
+      <span class="text-slate-500 text-xs" id="goal-label">/ 1.00000000 BTC</span>
+    </div>
+    <div class="flex flex-col items-center gap-5">
+      <div style="position:relative">
+        <div class="btc-coin">
+          <div class="coin-fill" id="coin-fill"></div>
+          <div class="coin-overlay">
+            <div class="coin-symbol">₿</div>
+            <div class="coin-pct" id="coin-pct">0%</div>
+          </div>
+        </div>
+        <div class="coin-glow" id="coin-glow"></div>
+      </div>
+      <div class="flex gap-10 text-center">
+        <div>
+          <div class="text-amber-400 font-bold text-sm" id="coin-accumulated">0 BTC</div>
+          <div class="text-slate-500 text-xs mt-0.5">Accumulated</div>
+        </div>
+        <div>
+          <div class="text-slate-400 font-bold text-sm" id="coin-remaining">1 BTC</div>
+          <div class="text-slate-500 text-xs mt-0.5">Remaining</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSACTION HISTORY -->
+  <section class="card fade-in">
+    <div class="p-4 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-bold text-slate-200">History</h2>
+      <div class="flex items-center gap-3">
+        <div class="flex border-b border-slate-700">
+          <button class="tab-btn active" data-f="all" onclick="setFilter('all')">All</button>
+          <button class="tab-btn" data-f="btc" onclick="setFilter('btc')">BTC</button>
+          <button class="tab-btn" data-f="expense" onclick="setFilter('expense')">Expenses</button>
+        </div>
+        <span class="text-slate-500 text-xs" id="tx-count">0 entries</span>
+      </div>
+    </div>
+    <div class="overflow-x-auto scrollbar-thin">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-slate-500 text-xs uppercase tracking-wider border-b border-slate-700">
+            <th class="px-4 py-2 text-left">Date</th>
+            <th class="px-4 py-2 text-left">Type</th>
+            <th class="px-4 py-2 text-left">Detail</th>
+            <th class="px-4 py-2 text-right">USD</th>
+            <th class="px-4 py-2 text-right">BTC</th>
+            <th class="px-4 py-2 text-right">Price/₿</th>
+            <th class="px-4 py-2 text-right">P/L</th>
+            <th class="px-4 py-2 text-right">Running ₿</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody id="tx-tbody"></tbody>
+      </table>
+      <div id="empty-state" class="empty-state hidden">
+        <div class="text-5xl mb-3 opacity-40">₿</div>
+        <p class="text-slate-400 font-semibold mb-2">No entries yet</p>
+        <p class="text-slate-600 text-sm mb-5">Start stacking sats or log an expense.</p>
+        <button onclick="openAddModal()" class="btn-primary">Add first entry</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ADD MODAL -->
+<div id="add-modal" class="modal-overlay hidden" onclick="backdropClose(event,'add-modal')">
+  <div class="modal-box fade-in" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold text-slate-200 text-lg"><span class="accent">₿</span> Add Entry</h2>
+      <button onclick="closeModal('add-modal')" class="text-slate-500 hover:text-slate-300 p-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <!-- Modal tabs -->
+    <div class="flex border-b border-slate-700 mb-4">
+      <button class="tab-btn active" id="mtab-btc" onclick="setModalTab('btc')">₿ BTC Stack</button>
+      <button class="tab-btn" id="mtab-expense" onclick="setModalTab('expense')">💸 Expense</button>
+    </div>
+
+    <!-- BTC FORM -->
+    <form id="btc-form" onsubmit="submitBTC(event)" class="space-y-4" autocomplete="off">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Date</label>
+          <input type="date" id="bf-date" class="input-field" required />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Type</label>
+          <div class="flex gap-2">
+            <button type="button" id="bf-buy" class="toggle-btn active-buy flex-1" onclick="setBTCType('buy')">Buy</button>
+            <button type="button" id="bf-sell" class="toggle-btn inactive flex-1" onclick="setBTCType('sell')">Sell</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Enter as</label>
+        <div class="flex border-b border-slate-700 mb-3">
+          <button type="button" class="tab-btn active" id="bf-tab-usd" onclick="setBTCMode('usd')">USD Amount</button>
+          <button type="button" class="tab-btn" id="bf-tab-btc" onclick="setBTCMode('btc')">BTC Amount</button>
+        </div>
+        <div id="bf-input-usd">
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+            <input type="number" id="bf-usd" class="input-field pl-7" placeholder="500.00" step="any" min="0" oninput="calcFromUSD()" />
+          </div>
+          <div class="text-xs text-slate-500 h-4 mt-1" id="bf-prev-usd"></div>
+        </div>
+        <div id="bf-input-btc" class="hidden">
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₿</span>
+            <input type="number" id="bf-btc" class="input-field pl-7" placeholder="0.00500000" step="any" min="0" oninput="calcFromBTC()" />
+          </div>
+          <div class="text-xs text-slate-500 h-4 mt-1" id="bf-prev-btc"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Platform</label>
+          <input list="platforms" id="bf-platform" class="input-field" placeholder="Coinbase" />
+          <datalist id="platforms">
+            <option value="Coinbase"></option><option value="Binance"></option><option value="Kraken"></option><option value="Bitkub"></option><option value="Other"></option>
+          </datalist>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Notes</label>
+          <input type="text" id="bf-notes" class="input-field" placeholder="Optional..." />
+        </div>
+      </div>
+      <div class="card p-3 space-y-1.5 text-sm hidden" id="bf-summary">
+        <div class="flex justify-between"><span class="text-slate-400">BTC</span><span class="font-mono font-bold text-slate-200" id="bfs-btc">—</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">USD Cost</span><span class="font-mono font-bold text-slate-200" id="bfs-usd">—</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Price/₿</span><span class="font-mono text-slate-400" id="bfs-price">—</span></div>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="button" onclick="closeModal('add-modal')" class="btn-ghost flex-1">Cancel</button>
+        <button type="submit" class="btn-primary flex-1">Save</button>
+      </div>
+    </form>
+
+    <!-- EXPENSE FORM -->
+    <form id="expense-form" onsubmit="submitExpense(event)" class="space-y-4 hidden" autocomplete="off">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Date</label>
+          <input type="date" id="ef-date" class="input-field" required />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Amount (USD)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+            <input type="number" id="ef-amount" class="input-field pl-7" placeholder="0.00" step="any" min="0" required />
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Category</label>
+        <select id="ef-category" class="input-field">
+          <option value="food">Food</option>
+          <option value="transport">Transport</option>
+          <option value="housing">Housing</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="utilities">Utilities</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Description</label>
+        <input type="text" id="ef-desc" class="input-field" placeholder="What's this for?" maxlength="120" />
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="button" onclick="closeModal('add-modal')" class="btn-ghost flex-1">Cancel</button>
+        <button type="submit" class="btn-primary flex-1">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" class="modal-overlay hidden" onclick="backdropClose(event,'settings-modal')">
+  <div class="modal-box fade-in" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-bold text-slate-200 text-lg">Settings</h2>
+      <button onclick="closeModal('settings-modal')" class="text-slate-500 hover:text-slate-300 p-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="space-y-5">
+      <div>
+        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">BTC Savings Goal</label>
+        <input type="number" id="s-goal" class="input-field" step="any" min="0.00000001" placeholder="1.0" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1.5">Display Unit</label>
+        <div class="flex gap-2">
+          <button type="button" id="s-btc" class="toggle-btn active-buy flex-1" onclick="setUnit('BTC')">BTC</button>
+          <button type="button" id="s-sats" class="toggle-btn inactive flex-1" onclick="setUnit('Sats')">Sats</button>
+        </div>
+      </div>
+      <div class="border-t border-slate-700 pt-4 space-y-3">
+        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide">Data</p>
+        <div class="flex gap-3">
+          <button onclick="exportData()" class="btn-ghost flex-1 text-sm" type="button">Export JSON</button>
+          <button onclick="document.getElementById('import-file').click()" class="btn-ghost flex-1 text-sm" type="button">Import JSON</button>
+          <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)" />
+        </div>
+        <button onclick="clearData()" class="w-full btn-ghost text-sm text-red-400 border-red-900 hover:border-red-600" type="button">Clear All Data</button>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button onclick="closeModal('settings-modal')" class="btn-ghost flex-1" type="button">Cancel</button>
+        <button onclick="saveSettings()" class="btn-primary flex-1" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const KEY = 'satstack_v2';
+let state = { goal: 1.0, unit: 'BTC', transactions: [] };
+let liveUSD = null;
+let filter = 'all';
+let btcType = 'buy';
+let btcMode = 'usd';
+let settingUnit = 'BTC';
+
+const CATS = {
+  food: 'Food', transport: 'Transport', housing: 'Housing',
+  entertainment: 'Entertainment', utilities: 'Utilities', other: 'Other'
+};
+
+const CAT_COLORS = {
+  food: '#fb923c', transport: '#a78bfa', housing: '#67e8f9',
+  entertainment: '#e879f9', utilities: '#94a3b8', other: '#94a3b8'
+};
+
+// ── Persistence ──────────────────────────────────────────────────────────────
+function load() {
+  try { const r = localStorage.getItem(KEY); if (r) state = { ...state, ...JSON.parse(r) }; } catch(e) {}
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function uid() {
+  return crypto.randomUUID ? crypto.randomUUID() :
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+function fmt(n, d=2) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fmtBTC(n) {
+  if (n == null || isNaN(n)) return '—';
+  return state.unit === 'Sats' ? fmt(Math.round(n * 1e8), 0) + ' sats' : fmt(n, 8) + ' ₿';
+}
+function fmtUSD(n) { return n == null || isNaN(n) ? '—' : '$' + fmt(n, 2); }
+function fmtDate(s) { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+function today() { return new Date().toISOString().split('T')[0]; }
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function fetchPrices() {
+  const dot = document.getElementById('price-dot');
+  if (dot) dot.style.background = '#f59e0b';
+  const [r1, r2] = await Promise.allSettled([
+    fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot').then(r => r.json()),
+    fetch('https://mempool.space/api/blocks/tip/height').then(r => r.text())
+  ]);
+  if (r1.status === 'fulfilled' && r1.value?.data?.amount) {
+    liveUSD = parseFloat(r1.value.data.amount);
+    document.getElementById('price-usd').textContent = '$' + fmt(liveUSD);
+  } else {
+    document.getElementById('price-usd').textContent = 'Unavailable';
+  }
+  if (r2.status === 'fulfilled') {
+    const h = parseInt(r2.value.trim());
+    if (!isNaN(h)) {
+      document.getElementById('block-height').textContent = fmt(h, 0);
+      const next = Math.ceil(h / 210000) * 210000;
+      const last = Math.floor(h / 210000) * 210000;
+      document.getElementById('halving-blocks').textContent = fmt(next - h, 0) + ' blocks';
+      document.getElementById('halving-fill').style.width = ((h - last) / 210000 * 100).toFixed(1) + '%';
+    }
+  }
+  document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  if (dot) dot.style.background = '#4ade80';
+  renderAll();
+}
+
+// ── Calculations ─────────────────────────────────────────────────────────────
+function calcBTC() {
+  let btc = 0, cost = 0;
+  for (const t of state.transactions) {
+    if (t.kind === 'buy') { btc += t.btcAmount; cost += t.usdCost; }
+    else if (t.kind === 'sell') { btc -= t.btcAmount; cost -= t.usdCost; }
+  }
+  const mv = liveUSD ? btc * liveUSD : null;
+  const pl = mv != null ? mv - cost : null;
+  const plPct = cost > 0 && pl != null ? (pl / cost) * 100 : null;
+  const avg = btc > 0 ? cost / btc : null;
+  return { btc, cost, mv, pl, plPct, avg };
+}
+
+function calcExpenses() {
+  const now = new Date();
+  const mo = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const exps = state.transactions.filter(t => t.kind === 'expense');
+  const total = exps.reduce((s,t) => s + t.amount, 0);
+  const month = exps.filter(t => t.date.startsWith(mo)).reduce((s,t) => s + t.amount, 0);
+  const byCat = {};
+  exps.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+  const top = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
+  return { total, month, top };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderBTCCards() {
+  const p = calcBTC();
+  const cards = [
+    { label: 'Total ₿', val: fmtBTC(p.btc), sub: p.btc > 0 ? fmt(Math.round(p.btc*1e8),0)+' sats' : null, accent: true },
+    { label: 'Cost Basis', val: fmtUSD(p.cost), sub: 'invested' },
+    { label: 'Market Value', val: p.mv != null ? fmtUSD(p.mv) : 'No price', sub: 'live' },
+    { label: 'P/L', val: p.pl != null ? fmtUSD(p.pl) : '—', color: p.pl != null ? (p.pl >= 0 ? 'pl-positive' : 'pl-negative') : '' },
+    { label: 'P/L %', val: p.plPct != null ? (p.plPct >= 0 ? '+' : '') + fmt(p.plPct) + '%' : '—', color: p.plPct != null ? (p.plPct >= 0 ? 'pl-positive' : 'pl-negative') : '' },
+    { label: 'Avg Cost/₿', val: fmtUSD(p.avg), sub: 'USD' }
+  ];
+  document.getElementById('btc-cards').innerHTML = cards.map(c => `
+    <div class="card card-hover p-4 flex flex-col gap-1">
+      <p class="text-slate-500 text-xs font-semibold uppercase tracking-wide">${c.label}</p>
+      <p class="font-bold text-base font-mono leading-tight ${c.accent ? 'accent' : 'text-slate-100'} ${c.color || ''}">${c.val}</p>
+      ${c.sub ? `<p class="text-slate-600 text-xs font-mono">${c.sub}</p>` : ''}
+    </div>`).join('');
+}
+
+function renderExpenseCards() {
+  const e = calcExpenses();
+  const topLabel = e.top ? CATS[e.top[0]] || e.top[0] : '—';
+  const topVal = e.top ? fmtUSD(e.top[1]) : '—';
+  const cards = [
+    { label: 'Total Expenses', val: fmtUSD(e.total), sub: 'all time' },
+    { label: 'This Month', val: fmtUSD(e.month), sub: new Date().toLocaleString('en-US',{month:'long'}) },
+    { label: 'Top Category', val: topLabel, sub: topVal }
+  ];
+  document.getElementById('expense-cards').innerHTML = cards.map(c => `
+    <div class="card card-hover p-4 flex flex-col gap-1">
+      <p class="text-slate-500 text-xs font-semibold uppercase tracking-wide">${c.label}</p>
+      <p class="font-bold text-base text-slate-100 leading-tight">${c.val}</p>
+      ${c.sub ? `<p class="text-slate-600 text-xs">${c.sub}</p>` : ''}
+    </div>`).join('');
+}
+
+function renderCoin() {
+  const p = calcBTC();
+  const goal = state.goal || 1.0;
+  const pct = goal > 0 ? Math.min((p.btc / goal) * 100, 100) : 0;
+  document.getElementById('goal-label').textContent = `/ ${fmt(goal,8)} BTC`;
+  document.getElementById('coin-pct').textContent = fmt(pct,2) + '%';
+  document.getElementById('coin-accumulated').textContent = fmt(Math.min(p.btc,goal),8) + ' BTC';
+  document.getElementById('coin-remaining').textContent = fmt(Math.max(goal-p.btc,0),8) + ' BTC';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('coin-fill').style.height = pct.toFixed(4) + '%';
+  }));
+  const glow = document.getElementById('coin-glow');
+  pct > 0 ? glow.classList.add('active') : glow.classList.remove('active');
+}
+
+function renderTable() {
+  let txs = [...state.transactions];
+  if (filter === 'btc') txs = txs.filter(t => t.kind === 'buy' || t.kind === 'sell');
+  if (filter === 'expense') txs = txs.filter(t => t.kind === 'expense');
+  txs.sort((a,b) => b.date.localeCompare(a.date));
+
+  document.getElementById('tx-count').textContent = txs.length + ' entries';
+
+  const empty = document.getElementById('empty-state');
+  if (!txs.length) { document.getElementById('tx-tbody').innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  // Running BTC map
+  const btcSorted = [...state.transactions]
+    .filter(t => t.kind==='buy'||t.kind==='sell')
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const runMap = {}; let run = 0;
+  btcSorted.forEach(t => { run += t.kind==='buy' ? t.btcAmount : -t.btcAmount; runMap[t.id] = run; });
+
+  document.getElementById('tx-tbody').innerHTML = txs.map(tx => {
+    if (tx.kind === 'buy' || tx.kind === 'sell') {
+      const cv = liveUSD ? tx.btcAmount * liveUSD : null;
+      const pl = cv != null ? cv - tx.usdCost : null;
+      const plPos = pl != null && pl >= 0;
+      return `<tr class="row-${tx.kind} border-b border-slate-800">
+        <td class="px-4 py-2.5 text-slate-400 text-xs font-mono whitespace-nowrap">${fmtDate(tx.date)}</td>
+        <td class="px-4 py-2.5 whitespace-nowrap"><span class="pill pill-${tx.kind}">${tx.kind}</span></td>
+        <td class="px-4 py-2.5 text-slate-500 text-xs max-w-[120px] truncate">${tx.platform || tx.notes || ''}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-slate-200 text-xs whitespace-nowrap">${fmtUSD(tx.usdCost)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-slate-200 text-xs whitespace-nowrap">${fmt(tx.btcAmount,8)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-slate-400 text-xs whitespace-nowrap">${tx.usdPrice ? fmtUSD(tx.usdPrice) : '—'}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-xs whitespace-nowrap font-semibold ${pl!=null?(plPos?'pl-positive':'pl-negative'):'text-slate-600'}">
+          ${pl!=null?(plPos?'+':'')+fmtUSD(pl):'—'}
+        </td>
+        <td class="px-4 py-2.5 text-right font-mono text-amber-500 text-xs whitespace-nowrap">${runMap[tx.id]!=null?fmt(runMap[tx.id],8):'—'}</td>
+        <td class="px-4 py-2.5 text-center"><button class="delete-btn" onclick="del('${tx.id}')">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button></td>
+      </tr>`;
+    } else {
+      const col = CAT_COLORS[tx.category] || '#94a3b8';
+      return `<tr class="row-expense border-b border-slate-800">
+        <td class="px-4 py-2.5 text-slate-400 text-xs font-mono whitespace-nowrap">${fmtDate(tx.date)}</td>
+        <td class="px-4 py-2.5 whitespace-nowrap"><span class="pill pill-expense">expense</span></td>
+        <td class="px-4 py-2.5 text-xs max-w-[200px] truncate">
+          <span class="pill mr-1" style="background:${col}22;color:${col}">${CATS[tx.category]||tx.category}</span>
+          <span class="text-slate-400">${tx.description||''}</span>
+        </td>
+        <td class="px-4 py-2.5 text-right font-mono text-orange-400 text-xs whitespace-nowrap font-semibold">-${fmtUSD(tx.amount)}</td>
+        <td class="px-4 py-2.5 text-center text-slate-700 text-xs" colspan="4">—</td>
+        <td class="px-4 py-2.5 text-center"><button class="delete-btn" onclick="del('${tx.id}')">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button></td>
+      </tr>`;
+    }
+  }).join('');
+}
+
+function renderAll() {
+  renderBTCCards(); renderExpenseCards(); renderCoin(); renderTable();
+}
+
+// ── Filter ───────────────────────────────────────────────────────────────────
+function setFilter(f) {
+  filter = f;
+  document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  renderTable();
+}
+
+// ── Add Modal ────────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('bf-date').value = today();
+  document.getElementById('ef-date').value = today();
+  ['bf-usd','bf-btc','bf-platform','bf-notes','ef-amount','ef-desc'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('bf-summary').classList.add('hidden');
+  setBTCType('buy'); setBTCMode('usd'); setModalTab('btc');
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function setModalTab(tab) {
+  document.getElementById('mtab-btc').classList.toggle('active', tab==='btc');
+  document.getElementById('mtab-expense').classList.toggle('active', tab==='expense');
+  document.getElementById('btc-form').classList.toggle('hidden', tab!=='btc');
+  document.getElementById('expense-form').classList.toggle('hidden', tab!=='expense');
+}
+
+// ── BTC Form ─────────────────────────────────────────────────────────────────
+function setBTCType(t) {
+  btcType = t;
+  document.getElementById('bf-buy').className = 'toggle-btn flex-1 ' + (t==='buy' ? 'active-buy' : 'inactive');
+  document.getElementById('bf-sell').className = 'toggle-btn flex-1 ' + (t==='sell' ? 'active-sell' : 'inactive');
+}
+
+function setBTCMode(m) {
+  btcMode = m;
+  document.getElementById('bf-input-usd').classList.toggle('hidden', m!=='usd');
+  document.getElementById('bf-input-btc').classList.toggle('hidden', m!=='btc');
+  document.getElementById('bf-tab-usd').classList.toggle('active', m==='usd');
+  document.getElementById('bf-tab-btc').classList.toggle('active', m==='btc');
+  document.getElementById('bf-summary').classList.add('hidden');
+}
+
+function calcFromUSD() {
+  const usd = parseFloat(document.getElementById('bf-usd').value);
+  if (!usd || !liveUSD) { document.getElementById('bf-prev-usd').textContent = liveUSD ? 'Enter USD' : 'Price unavailable'; document.getElementById('bf-summary').classList.add('hidden'); return; }
+  const btc = usd / liveUSD;
+  document.getElementById('bf-prev-usd').textContent = `= ${fmt(btc,8)} BTC @ ${fmtUSD(liveUSD)}/BTC`;
+  showBTCSummary(btc, usd);
+}
+
+function calcFromBTC() {
+  const btc = parseFloat(document.getElementById('bf-btc').value);
+  if (!btc || !liveUSD) { document.getElementById('bf-prev-btc').textContent = liveUSD ? 'Enter BTC' : 'Price unavailable'; document.getElementById('bf-summary').classList.add('hidden'); return; }
+  const usd = btc * liveUSD;
+  document.getElementById('bf-prev-btc').textContent = `= ${fmtUSD(usd)} @ ${fmtUSD(liveUSD)}/BTC`;
+  showBTCSummary(btc, usd);
+}
+
+function showBTCSummary(btc, usd) {
+  document.getElementById('bfs-btc').textContent = fmt(btc,8) + ' ₿';
+  document.getElementById('bfs-usd').textContent = fmtUSD(usd);
+  document.getElementById('bfs-price').textContent = liveUSD ? fmtUSD(liveUSD) : '—';
+  document.getElementById('bf-summary').classList.remove('hidden');
+}
+
+function submitBTC(e) {
+  e.preventDefault();
+  let btcAmount = 0, usdCost = 0;
+  if (btcMode === 'usd') {
+    const usd = parseFloat(document.getElementById('bf-usd').value);
+    if (!usd || usd <= 0) { toast('Enter a valid USD amount', 'red'); return; }
+    if (!liveUSD) { toast('Live price unavailable. Use BTC mode.', 'red'); return; }
+    usdCost = usd; btcAmount = usd / liveUSD;
+  } else {
+    const btc = parseFloat(document.getElementById('bf-btc').value);
+    if (!btc || btc <= 0) { toast('Enter a valid BTC amount', 'red'); return; }
+    btcAmount = btc; usdCost = liveUSD ? btc * liveUSD : 0;
+  }
+  state.transactions.push({ id: uid(), date: document.getElementById('bf-date').value, kind: btcType, btcAmount, usdCost, usdPrice: liveUSD || null, platform: document.getElementById('bf-platform').value || '', notes: document.getElementById('bf-notes').value || '' });
+  save(); renderAll(); closeModal('add-modal');
+  toast(btcType === 'buy' ? 'BTC buy saved ₿' : 'BTC sell saved', btcType === 'buy' ? 'green' : 'red');
+}
+
+// ── Expense Form ─────────────────────────────────────────────────────────────
+function submitExpense(e) {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('ef-amount').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'red'); return; }
+  state.transactions.push({ id: uid(), date: document.getElementById('ef-date').value, kind: 'expense', amount, category: document.getElementById('ef-category').value, description: document.getElementById('ef-desc').value.trim() });
+  save(); renderAll(); closeModal('add-modal');
+  toast('Expense saved', 'orange');
+}
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+function del(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx || !confirm(`Delete this ${tx.kind} entry from ${fmtDate(tx.date)}?`)) return;
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  save(); renderAll(); toast('Deleted', 'red');
+}
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('s-goal').value = state.goal;
+  settingUnit = state.unit || 'BTC';
+  updateUnitBtns();
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function setUnit(u) { settingUnit = u; updateUnitBtns(); }
+function updateUnitBtns() {
+  document.getElementById('s-btc').className = 'toggle-btn flex-1 ' + (settingUnit==='BTC' ? 'active-buy' : 'inactive');
+  document.getElementById('s-sats').className = 'toggle-btn flex-1 ' + (settingUnit==='Sats' ? 'active-buy' : 'inactive');
+}
+
+function saveSettings() {
+  const g = parseFloat(document.getElementById('s-goal').value);
+  if (!isNaN(g) && g > 0) state.goal = g;
+  state.unit = settingUnit;
+  save(); renderAll(); closeModal('settings-modal'); toast('Settings saved', 'green');
+}
+
+function exportData() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+  a.download = 'satstack-backup-' + today() + '.json'; a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const p = JSON.parse(ev.target.result);
+      if (!Array.isArray(p.transactions)) { toast('Invalid file', 'red'); return; }
+      if (!confirm(`Import ${p.transactions.length} transactions? Replaces all current data.`)) return;
+      state = { ...state, ...p }; save(); renderAll(); closeModal('settings-modal'); toast('Imported', 'green');
+    } catch { toast('Failed to parse file', 'red'); }
+  };
+  r.readAsText(file);
+}
+
+function clearData() {
+  if (!confirm('Clear ALL data? This cannot be undone.')) return;
+  state = { goal: 1.0, unit: 'BTC', transactions: [] }; save(); renderAll(); closeModal('settings-modal'); toast('Data cleared', 'red');
+}
+
+// ── Modal Helpers ─────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function backdropClose(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal('add-modal'); closeModal('settings-modal'); }
+  if ((e.key === 'n' || e.key === 'N') && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+    e.preventDefault(); openAddModal();
+  }
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+const TOAST_COLORS = { green: '#4ade80', red: '#f87171', orange: '#fb923c' };
+function toast(msg, color='green') {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="toast-dot" style="background:${TOAST_COLORS[color]||TOAST_COLORS.green}"></span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 200); }, 2500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+load(); renderAll(); fetchPrices(); setInterval(fetchPrices, 60000);
+</script>
+</body>
+</html>
